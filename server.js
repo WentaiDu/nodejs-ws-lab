@@ -9,9 +9,6 @@ const PORT = process.env.PORT || 8080;
 const PUBLIC_DIR = "public";
 const STATIC_DIR = "static";
 
-/**
- * Build and minify all client code for Express
- */
 function bundleClient() {
   const options = {
     outDir: PUBLIC_DIR,
@@ -23,10 +20,6 @@ function bundleClient() {
   const bundler = new ParcelBundler("index.html", options);
   return bundler.bundle();
 }
-
-/**
- * Setup a quick Web Socket server
- */
 function setupWSServer(server) {
   const wss = new WebSocketServer({
     server,
@@ -37,8 +30,13 @@ function setupWSServer(server) {
     ws.on("message", (rawMsg) => {
       console.log(`RECV: ${rawMsg}`);
       const incommingMessage = JSON.parse(rawMsg);
-      actorCoordinates.x = incommingMessage.x;
-      actorCoordinates.y = incommingMessage.y;
+      // actorCoordinates.x = incommingMessage.x;
+      // actorCoordinates.y = incommingMessage.y;
+      actorCoordinates[incommingMessage.id] = {
+        x: incommingMessage.x,
+        y: incommingMessage.y,
+        frame: incommingMessage.frame
+      }
       wss.clients.forEach((wsClient) => {
         wsClient.send(JSON.stringify(actorCoordinates));
       })
@@ -52,10 +50,6 @@ function setupWSServer(server) {
   });
   return wss;
 }
-
-/**
- * Setup an Express application and web server
- */
 function setupServer() {
   // Setup the Express application
   const app = express();
@@ -77,7 +71,6 @@ function setupServer() {
   });
   return server;
 }
-
 if (require.main === module) {
   bundleClient().then(() => {
     const server = setupServer();
